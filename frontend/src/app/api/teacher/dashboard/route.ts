@@ -1,8 +1,14 @@
 import { NextResponse } from "next/server";
 import { getTeacherDashboard } from "@/lib/db";
-import { currentTeacher } from "@/lib/security";
+import { currentTeacher, isGuest } from "@/lib/security";
+import { guestTeacherDashboard } from "@/lib/demo-data";
 
 export async function GET(request: Request) {
+  // Guests see demo teacher data only.
+  if (await isGuest(request)) {
+    return NextResponse.json(guestTeacherDashboard);
+  }
+
   const auth = await currentTeacher(request);
 
   if (!auth) {

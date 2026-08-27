@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { ArrowRight, Eye, EyeOff, KeyRound, Lock, Mail, RefreshCw, BookOpenCheck } from "lucide-react";
 
 export default function TeacherLoginPage() {
@@ -12,6 +12,15 @@ export default function TeacherLoginPage() {
   const [showClearSession, setShowClearSession] = useState(false);
   const [pendingCredentials, setPendingCredentials] = useState<Record<string, string> | null>(null);
   const [clearingSession, setClearingSession] = useState(false);
+
+  // Clear any existing session (student/guest/principal) when landing on the teacher login page
+  useEffect(() => {
+    (async () => {
+      await fetch("/api/auth/clear-current", { method: "POST" }).catch(() => {});
+      // Small delay to ensure the Set-Cookie takes effect before the navbar re-checks.
+      setTimeout(() => window.dispatchEvent(new Event("adyapan-auth-change")), 50);
+    })();
+  }, []);
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();

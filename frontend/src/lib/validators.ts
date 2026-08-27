@@ -25,6 +25,8 @@ export const loginSchema = z.object({
   source: z.enum(["web", "mobile", "app"]).optional().default("web")
 });
 
+
+
 export const principalLoginSchema = z.object({
   email: z.string().trim().toLowerCase().email(),
   password: z.string().min(8),

@@ -30,6 +30,7 @@ type NavUser = {
   email?: string;
   role: "student" | "admin" | "principal" | "teacher";
   schoolName?: string;
+  guest?: boolean;
 };
 
 export default function SiteNavbar() {
@@ -131,6 +132,16 @@ export default function SiteNavbar() {
   }
 
   async function logout() {
+    if (user?.guest) {
+      await fetch("/api/auth/guest", { method: "DELETE" });
+      broadcastLogout();
+      setUser(null);
+      setMenuOpen(false);
+      setProfileOpen(false);
+      window.dispatchEvent(new Event("adyapan-auth-change"));
+      window.location.href = "/";
+      return;
+    }
     const logoutUrl =
       user?.role === "principal" ? "/api/principal/logout" : user?.role === "teacher" ? "/api/teacher/logout" : "/api/auth/logout";
     await fetch(logoutUrl, { method: "POST" });
@@ -140,6 +151,11 @@ export default function SiteNavbar() {
     setProfileOpen(false);
     window.dispatchEvent(new Event("adyapan-auth-change"));
     window.location.href = user?.role === "principal" ? "/principal/login" : user?.role === "teacher" ? "/teacher/login" : "/login";
+  }
+
+  function continueAsGuest() {
+    setMenuOpen(false);
+    window.location.href = "/guest";
   }
 
   function openDashboardWindow(href: string) {
@@ -169,7 +185,14 @@ export default function SiteNavbar() {
   const shortName = user?.name?.split(" ")[0] || "Student";
   const initial = (user?.name?.trim()?.[0] || "A").toUpperCase();
   const menuItems =
-    user?.role === "admin"
+    user?.guest
+      ? [
+          { label: "Demo Portals Hub", href: "/guest", icon: LayoutDashboard },
+          { label: "Student Portal", href: "/student-dashboard", icon: BookOpen },
+          { label: "Teacher Portal", href: "/teacher/dashboard", icon: BarChart3 },
+          { label: "Admin Portal", href: "/admin", icon: Settings }
+        ]
+    : user?.role === "admin"
       ? [{ label: "Admin Dashboard", href: dashboardHref, icon: LayoutDashboard }]
       : user?.role === "principal"
         ? [
@@ -241,23 +264,29 @@ export default function SiteNavbar() {
               <button
                 type="button"
                 onClick={() => setProfileOpen((value) => !value)}
-                className="inline-flex h-12 max-w-[230px] items-center gap-3 rounded-full border-2 border-white/30 bg-white/10 px-3 pr-4 text-left font-black text-white shadow-[0_10px_22px_rgba(0,0,0,0.2)] transition hover:-translate-y-0.5 hover:bg-white/20"
+                className={`inline-flex h-12 max-w-[240px] items-center gap-3 rounded-full border-2 px-3 pr-4 text-left font-black shadow-[0_10px_22px_rgba(0,0,0,0.2)] transition hover:-translate-y-0.5 ${
+                  user.guest
+                    ? "border-amber-300/60 bg-amber-400/15 text-white hover:bg-amber-400/25"
+                    : "border-white/30 bg-white/10 text-white hover:bg-white/20"
+                }`}
                 aria-expanded={profileOpen}
                 aria-haspopup="menu"
               >
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#ffd84d] to-[#ff5b55] text-sm font-black text-slate-950">
-                  {initial}
+                <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-black text-slate-950 ${user.guest ? "bg-gradient-to-br from-[#ffd84d] to-[#ff9f2f]" : "bg-gradient-to-br from-[#ffd84d] to-[#ff5b55]"}`}>
+                  {user.guest ? "G" : initial}
                 </span>
                 <span className="min-w-0">
-                  <span className="block truncate text-[15px] leading-4">{shortName}</span>
-                  <span className="block truncate text-[11px] font-bold uppercase tracking-[0.12em] text-slate-600">
-                    {user.role === "admin"
-                      ? "Admin"
-                      : user.role === "principal"
-                        ? "Principal"
-                        : user.role === "teacher"
-                          ? "Teacher"
-                          : "Student"}
+                  <span className="block truncate text-[15px] leading-4">{user.guest ? "Guest" : shortName}</span>
+                  <span className={`block truncate text-[11px] font-bold uppercase tracking-[0.12em] ${user.guest ? "text-amber-200" : "text-slate-600"}`}>
+                    {user.guest
+                      ? "Demo Mode"
+                      : user.role === "admin"
+                        ? "Admin"
+                        : user.role === "principal"
+                          ? "Principal"
+                          : user.role === "teacher"
+                            ? "Teacher"
+                            : "Student"}
                   </span>
                 </span>
                 <ChevronDown className={`h-4 w-4 shrink-0 transition ${profileOpen ? "rotate-180" : ""}`} />
@@ -269,12 +298,12 @@ export default function SiteNavbar() {
                   className="absolute right-0 mt-3 w-72 overflow-hidden rounded-2xl border border-white/70 bg-white p-2 text-slate-950 shadow-[0_24px_60px_rgba(15,23,42,0.18)]"
                 >
                   <div className="flex items-center gap-3 border-b border-slate-100 p-3">
-                    <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-slate-950 text-base font-black text-white">
-                      {initial}
+                    <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-base font-black text-white ${user.guest ? "bg-gradient-to-br from-amber-400 to-orange-500" : "bg-slate-950"}`}>
+                      {user.guest ? "G" : initial}
                     </span>
                     <span className="min-w-0">
-                      <span className="block truncate text-sm font-black">{user.name}</span>
-                      <span className="block truncate text-xs font-semibold text-slate-500">{user.email || "ADYAPAN learner"}</span>
+                      <span className="block truncate text-sm font-black">{user.guest ? "Guest User" : user.name}</span>
+                      <span className="block truncate text-xs font-semibold text-slate-500">{user.guest ? "Demo mode · sample data only" : user.email || "ADYAPAN learner"}</span>
                     </span>
                   </div>
 
@@ -298,7 +327,7 @@ export default function SiteNavbar() {
                     className="flex w-full items-center gap-3 rounded-xl border-t border-slate-100 px-3 py-3 text-left text-sm font-black text-rose-600 transition hover:bg-rose-50"
                   >
                     <LogOut className="h-4 w-4" />
-                    Logout
+                    {user.guest ? "Exit Demo" : "Logout"}
                   </button>
                 </div>
               )}
@@ -311,6 +340,13 @@ export default function SiteNavbar() {
               >
                 Login
               </a>
+              <button
+                type="button"
+                onClick={continueAsGuest}
+                className="inline-flex h-12 min-w-[92px] items-center justify-center rounded-full bg-gradient-to-r from-[#ffd84d] to-[#ff9f2f] px-5 text-[15px] font-black text-slate-950 shadow-[0_10px_22px_rgba(0,0,0,0.2)] transition hover:-translate-y-0.5 hover:brightness-105 2xl:min-w-[100px] 2xl:px-6"
+              >
+                Guest User
+              </button>
             </>
           )}
         </div>
@@ -348,13 +384,15 @@ export default function SiteNavbar() {
                   <span className="min-w-0">
                     <span className="block truncate text-base font-black text-slate-950">{user.name}</span>
                     <span className="block truncate text-xs font-bold uppercase tracking-[0.12em] text-slate-700">
-                      {user.role === "admin"
-                        ? "Admin"
-                        : user.role === "principal"
-                          ? "Principal"
-                          : user.role === "teacher"
-                            ? "Teacher"
-                            : "Student"}
+                      {user.guest
+                        ? "Demo"
+                        : user.role === "admin"
+                          ? "Admin"
+                          : user.role === "principal"
+                            ? "Principal"
+                            : user.role === "teacher"
+                              ? "Teacher"
+                              : "Student"}
                     </span>
                   </span>
                 </div>
@@ -376,7 +414,7 @@ export default function SiteNavbar() {
                     className="flex items-center gap-3 rounded-2xl bg-rose-50 px-4 py-3 text-left text-base font-black text-rose-600"
                   >
                     <LogOut className="h-5 w-5" />
-                    Logout
+                    {user.guest ? "Exit Demo" : "Logout"}
                   </button>
                 </div>
               </div>
@@ -389,6 +427,13 @@ export default function SiteNavbar() {
                 >
                   Login
                 </a>
+                <button
+                  type="button"
+                  onClick={continueAsGuest}
+                  className="block w-full rounded-full bg-gradient-to-r from-[#ffd84d] to-[#ff9f2f] px-4 py-3 text-center text-base font-black text-slate-950 transition hover:brightness-105"
+                >
+                  Guest User
+                </button>
               </div>
             )}
           </div>

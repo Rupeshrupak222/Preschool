@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { ArrowRight, Eye, EyeOff, KeyRound, Lock, Mail, RefreshCw, ShieldCheck } from "lucide-react";
 
 export default function PrincipalLoginPage() {
@@ -12,6 +12,14 @@ export default function PrincipalLoginPage() {
   const [showClearSession, setShowClearSession] = useState(false);
   const [pendingCredentials, setPendingCredentials] = useState<Record<string, string> | null>(null);
   const [clearingSession, setClearingSession] = useState(false);
+
+  // Clear any existing session (student/guest/teacher) when landing on the principal login page
+  useEffect(() => {
+    (async () => {
+      await fetch("/api/auth/clear-current", { method: "POST" }).catch(() => {});
+      setTimeout(() => window.dispatchEvent(new Event("adyapan-auth-change")), 50);
+    })();
+  }, []);
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();

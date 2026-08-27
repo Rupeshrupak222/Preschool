@@ -1,9 +1,15 @@
 import { NextResponse } from "next/server";
 import { getAdminOverview, isMysqlConfigured } from "@/lib/db";
-import { currentUser } from "@/lib/security";
+import { currentUser, isGuest } from "@/lib/security";
+import { guestAdminOverview } from "@/lib/demo-data";
 import { store } from "@/lib/store";
 
 export async function GET(request: Request) {
+  // Guests see demo admin data only.
+  if (await isGuest(request)) {
+    return NextResponse.json({ ...guestAdminOverview, mode: "guest", guest: true });
+  }
+
   const auth = await currentUser(request);
 
   if (!auth || auth.role !== "admin") {

@@ -1,9 +1,14 @@
 import { NextResponse } from "next/server";
 import { findUserByEmail, isMysqlConfigured } from "@/lib/db";
-import { currentUser } from "@/lib/security";
+import { currentUser, isGuest, guestIdentity } from "@/lib/security";
 import { publicUser, store } from "@/lib/store";
 
 export async function GET(request: Request) {
+  // Guest demo — return a synthetic student identity.
+  if (await isGuest(request)) {
+    return NextResponse.json({ user: guestIdentity("student") });
+  }
+
   const user = await currentUser(request);
 
   if (!user) {

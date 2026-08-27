@@ -228,14 +228,15 @@ export default function AdminPage() {
 
     const authResponse = await fetch("/api/auth/me", { cache: "no-store" });
     const authData = await authResponse.json().catch(() => ({}));
+    const isGuestUser = Boolean(authData.user?.guest);
 
-    if (!authResponse.ok || authData.user?.role !== "admin") {
+    if (!authResponse.ok || (authData.user?.role !== "admin" && !isGuestUser)) {
       setShowLogin(true);
       setLoading(false);
       return;
     }
 
-    setAdminName(authData.user?.name || "Admin");
+    setAdminName(isGuestUser ? "Guest User" : authData.user?.name || "Admin");
 
     const overviewResponse = await fetch("/api/admin/overview", { cache: "no-store" });
     const data = await overviewResponse.json().catch(() => ({}));

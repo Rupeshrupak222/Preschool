@@ -1,8 +1,14 @@
 import { NextResponse } from "next/server";
 import { getPrincipalDashboard } from "@/lib/db";
-import { currentPrincipal } from "@/lib/security";
+import { currentPrincipal, isGuest } from "@/lib/security";
+import { guestPrincipalDashboard } from "@/lib/demo-data";
 
 export async function GET(request: Request) {
+  // Guests see demo principal data only.
+  if (await isGuest(request)) {
+    return NextResponse.json(guestPrincipalDashboard);
+  }
+
   const auth = await currentPrincipal(request);
 
   if (!auth) {

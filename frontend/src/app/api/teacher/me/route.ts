@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
-import { currentTeacher } from "@/lib/security";
+import { currentTeacher, isGuest, guestIdentity } from "@/lib/security";
 
 export async function GET(request: Request) {
+  if (await isGuest(request)) {
+    return NextResponse.json({ user: guestIdentity("teacher") });
+  }
+
   const teacher = await currentTeacher(request);
 
   if (!teacher) {

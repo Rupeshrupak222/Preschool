@@ -1,7 +1,12 @@
 import { redirect } from "next/navigation";
-import { currentUser } from "@/lib/security";
+import { currentUser, isGuest } from "@/lib/security";
 
 export default async function StudentDashboardLayout({ children }: { children: React.ReactNode }) {
+  // Allow guest demo access.
+  if (await isGuest()) {
+    return children;
+  }
+
   const user = await currentUser();
 
   if (!user) {

@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
-import { currentPrincipal } from "@/lib/security";
+import { currentPrincipal, isGuest, guestIdentity } from "@/lib/security";
 
 export async function GET(request: Request) {
+  if (await isGuest(request)) {
+    return NextResponse.json({ user: guestIdentity("principal") });
+  }
+
   const principal = await currentPrincipal(request);
 
   if (!principal) {

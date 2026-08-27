@@ -77,6 +77,15 @@ async function getActiveSession(request: NextRequest): Promise<TokenPayload | nu
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  // Guest demo mode — a single guest cookie unlocks read-only demo views
+  // across ALL portals. The route handlers themselves return sample data
+  // and block any writes, so it is safe to let guests through here.
+  const isGuest = request.cookies.get("adyapan_guest")?.value === "1";
+  if (isGuest) {
+    return NextResponse.next();
+  }
+
   const session = await getActiveSession(request);
 
   // Login pages are always accessible — never redirect away from them.

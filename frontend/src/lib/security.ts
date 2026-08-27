@@ -7,6 +7,29 @@ const fallbackSecret = "local-dev-secret-change-in-production";
 export const authCookieNames = ["adyapan_token", "adyapan_principal_token", "adyapan_teacher_token"] as const;
 type AuthCookieName = (typeof authCookieNames)[number];
 
+export const GUEST_COOKIE = "adyapan_guest";
+
+/** Returns true when the request carries a valid guest demo cookie. */
+export async function isGuest(request?: Request) {
+  const header = request?.headers.get("cookie") ?? "";
+  if (header.includes(`${GUEST_COOKIE}=1`)) return true;
+  const cookieStore = await cookies();
+  return cookieStore.get(GUEST_COOKIE)?.value === "1";
+}
+
+/** A synthetic guest identity used across all portals for demo mode. */
+export function guestIdentity(role: "student" | "teacher" | "principal" | "admin") {
+  return {
+    id: `guest_${role}`,
+    email: "guest@guest.adyapan.local",
+    role,
+    name: "Guest User",
+    schoolName: "Demo School",
+    schoolId: "demo_school",
+    guest: true
+  };
+}
+
 export type AuthPayload = {
   id: string;
   email: string;
